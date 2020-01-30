@@ -42,14 +42,11 @@ const useStyles = makeStyles(theme => ({
 const Board = () => {
   const classes = useStyles();
 
-  const { state, sendChatAction } = useContext(ctx);
-  console.log(state);
+  const { state, sendChatAction, name } = useContext(ctx);
   const rooms = Object.keys(state);
 
   const [msgText, setMsgText] = useState("");
   const [activeRoom, setActiveRoom] = useState(rooms[0]);
-
- 
 
   return (
     <Paper elevation={3} className={classes.root}>
@@ -97,7 +94,7 @@ const Board = () => {
           variant="contained"
           color="primary"
           onClick={() => {
-            sendChatAction(msgText);
+            sendChatAction({ name, text: msgText, room: activeRoom });
             setMsgText("");
           }}
         >
