@@ -8,8 +8,12 @@ const CHAT_MESSAGE = "CHAT_MESSAGE";
 const USER_JOIN_ROOM = "USER_JOIN_ROOM";
 const LOGIN_ERROR = "LOGIN_ERROR";
 
-app.use(cors());
-
+app.use(function(request, response, next) {
+  response.header("Access-Control-Allow-Origin", "*");
+  response.header("Access-Control-Allow-Headers", 
+                  "Origin, X-Rquested-With, Content-Type, Accept");
+  next();
+});
 const users = new Set();
 
 app.get("/check_login", function(req, res) {

@@ -16,6 +16,14 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
+const fetchParams = {
+  method: "GET",
+  dataType: "JSON",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+};
+
 const Auth = () => {
   const [name, setName] = useState("");
   const classes = useStyles();
@@ -36,11 +44,16 @@ const Auth = () => {
         variant="contained"
         color="primary"
         onClick={() => {
-          fetch(`http://localhost:3001/check_login?name=${name}`,{
-            mode: 'cors',
-            credentials: 'include',
-            credentials: 'same-origin',
-          }).then(res => console.log(res));
+          fetch(`http://localhost:3001/check_login?name=${name}`, fetchParams)
+            .then(res => res.json())
+            .then(res => {
+              console.log(res);
+              if (!res.isLogin) {
+                console.log("huyarim");
+              } else {
+                console.log("nea");
+              }
+            });
           // dispatch({ type: GET_NAME, name },(state) => {
           //   console.log(state)
           // });
