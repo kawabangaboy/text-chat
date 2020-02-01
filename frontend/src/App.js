@@ -1,7 +1,7 @@
 import React from "react";
 import "./App.css";
 
-import Board from "./Board";
+import Board from "./Chat";
 import Store from "./store";
 import { Switch, Route, BrowserRouter as Router } from "react-router-dom";
 import Auth from "./Auth";

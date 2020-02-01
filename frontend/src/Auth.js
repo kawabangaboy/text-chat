@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import TextField from "@material-ui/core/TextField";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
@@ -19,9 +19,10 @@ const useStyles = makeStyles(theme => ({
 const Auth = () => {
   const [name, setName] = useState("");
   const classes = useStyles();
-  let history = useHistory()
+  let history = useHistory();
   const { state, dispatch } = useContext(ctx);
   console.log(state);
+  useEffect(() => {}, [state.name]);
 
   return (
     <Paper elevation={3} className={classes.root}>
@@ -35,8 +36,15 @@ const Auth = () => {
         variant="contained"
         color="primary"
         onClick={() => {
-          dispatch({ type: GET_NAME, name });
-          history.push('/chats')
+          fetch(`http://localhost:3001/check_login?name=${name}`,{
+            mode: 'cors',
+            credentials: 'include',
+            credentials: 'same-origin',
+          }).then(res => console.log(res));
+          // dispatch({ type: GET_NAME, name },(state) => {
+          //   console.log(state)
+          // });
+          // history.push('/chats')
         }}
       >
         Primary

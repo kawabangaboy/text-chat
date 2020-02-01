@@ -13,6 +13,8 @@ import TextField from "@material-ui/core/TextField";
 import { ctx } from "./store";
 import { useHistory } from "react-router-dom";
 
+import { CHANGE_ROOM } from "./store";
+
 const useStyles = makeStyles(theme => ({
   root: {
     textAlign: "center",
@@ -40,11 +42,11 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Board = () => {
+const Chat = () => {
   const classes = useStyles();
   let history = useHistory();
 
-  const { state, sendChatAction } = useContext(ctx);
+  const { state, sendChatAction, dispatch } = useContext(ctx);
   if (state.name === "") {
     history.push("/");
   }
@@ -53,7 +55,11 @@ const Board = () => {
 
   const [msgText, setMsgText] = useState("");
   const [activeRoom, setActiveRoom] = useState(rooms[0]);
-
+  const changeRoom = e => {
+    const { innerText } = e.target;
+    dispatch({ type: CHANGE_ROOM, prevRoom: activeRoom, room: innerText });
+    setActiveRoom(innerText);
+  };
   return (
     <Paper elevation={3} className={classes.root}>
       <Typography variant="h3" component="h3" gutterBottom>
@@ -66,11 +72,7 @@ const Board = () => {
         <div className={classes.rooms}>
           <List component="nav" aria-label="main mailbox folders">
             {rooms.map(room => (
-              <ListItem
-                button
-                key={room}
-                onClick={e => setActiveRoom(e.target.innerText)}
-              >
+              <ListItem button key={room} onClick={changeRoom}>
                 <ListItemText primary={room} />
               </ListItem>
             ))}
@@ -115,4 +117,4 @@ const Board = () => {
   );
 };
 
-export default Board;
+export default Chat;
