@@ -3,7 +3,8 @@ import io from "socket.io-client";
 
 export const ctx = createContext();
 export const RECIEVE_MSG = "RECIEVE_MSG";
-const CHAT_MESSAGE = 'CHAT_MESSAGE'
+export const GET_NAME = "GET_NAME";
+const CHAT_MESSAGE = "CHAT_MESSAGE";
 /*
   msg { 
     name,
@@ -33,26 +34,27 @@ const msg2 = {
 };
 
 const initState = {
-  room1: [msg1, msg1, msg1],
-  room2: [msg2, msg2, msg2]
+  name: "",
+  rooms: { room1: [msg1, msg1, msg1], room2: [msg2, msg2, msg2] }
 };
-const reducer = (state, { type, text, room, name }) => {
+const reducer = (state, action) => {
+  const { type, name } = action;
   switch (type) {
     case RECIEVE_MSG:
-      console.log("state before", state);
-      console.log(state[room]);
-      const roomUpdate = [...state[room], { name, room, text }];
-      console.log(roomUpdate);
-      console.log("state after---", { ...state, [room]: roomUpdate });
-      return { ...state, [room]: roomUpdate };
-    // return state;
+      const { text, room } = action;
+      console.log(state);
+      const roomUpdate = [...state.rooms[room], { name, room, text }];
+      const newState = JSON.parse(JSON.stringify(state))
+      newState.rooms[room] = roomUpdate
+      return newState;
+    case GET_NAME:
+      return { ...state, name };
     default:
       return state;
   }
 };
 
 let socket;
-let name;
 
 const sendChatAction = value => {
   socket.emit(CHAT_MESSAGE, JSON.stringify(value));
@@ -68,13 +70,10 @@ export default function Store(props) {
       dispatch({ type: RECIEVE_MSG, ...JSON.parse(newMsg) });
     });
   }
-  if (!name) {
-    name = "ivan" + +Math.random(100);
-  }
 
   const { Provider } = ctx;
   return (
-    <Provider value={{ state, sendChatAction, name }}>
+    <Provider value={{ state, sendChatAction, dispatch }}>
       {props.children}
     </Provider>
   );

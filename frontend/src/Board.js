@@ -11,6 +11,7 @@ import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 
 import { ctx } from "./store";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -41,9 +42,14 @@ const useStyles = makeStyles(theme => ({
 
 const Board = () => {
   const classes = useStyles();
+  let history = useHistory();
 
-  const { state, sendChatAction, name } = useContext(ctx);
-  const rooms = Object.keys(state);
+  const { state, sendChatAction } = useContext(ctx);
+  if (state.name === "") {
+    history.push("/");
+  }
+
+  const rooms = Object.keys(state.rooms);
 
   const [msgText, setMsgText] = useState("");
   const [activeRoom, setActiveRoom] = useState(rooms[0]);
@@ -71,7 +77,7 @@ const Board = () => {
           </List>
         </div>
         <div className={classes.chatWindow}>
-          {state[activeRoom].map((chatMsg, idx) => (
+          {state.rooms[activeRoom].map((chatMsg, idx) => (
             <div className={classes.flex} key={idx}>
               <Chip label={chatMsg.name} />
               <Typography variant="body1">{chatMsg.text}</Typography>
@@ -94,7 +100,11 @@ const Board = () => {
           variant="contained"
           color="primary"
           onClick={() => {
-            sendChatAction({ name, text: msgText, room: activeRoom });
+            sendChatAction({
+              name: state.name,
+              text: msgText,
+              room: activeRoom
+            });
             setMsgText("");
           }}
         >
