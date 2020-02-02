@@ -2,57 +2,46 @@ import React, { createContext, useReducer } from "react";
 import io from "socket.io-client";
 
 export const ctx = createContext();
-export const RECIEVE_MSG = "RECIEVE_MSG";
-export const GET_NAME = "GET_NAME";
-export const CHAT_MESSAGE = "CHAT_MESSAGE";
-export const CHANGE_ROOM = "CHANGE_ROOM";
-export const LOGIN_ERROR = "LOGIN_ERROR";
-export const START_LOADING = "START_LOADING";
-export const LOADING_SUCCESS = "LOADING_SUCCESS";
-export const CREATE_NEW_ROOM = "CREATE_NEW_ROOM";
-export const CHECK_NICKNAME = "CHECK_NICKNAME";
-export const SET_NICKNAME = "SET_NICKNAME";
-const SET_ROOM = "SET_ROOM";
-
+const RECIEVE_MSG = "RECIEVE_MSG";
+const LOGIN = "LOGIN";
+const NEW_USER = "NEW_USER";
+const LOGIN_SUCCESS = "LOGIN_SUCCESS";
+const LOGIN_FAILURE = "LOGIN_FAILURE";
+const CHAT_MESSAGE = "CHAT_MESSAGE";
+const USER_DISCONNECT = "USER_DISCONNECT";
+export const SET_ROOM = "SET_ROOM";
 const initState = {
-  name: "",
-  prevRoom: "",
-  error: "",
-  loading: false,
-  rooms: {}
+  room: "",
+  nickname: "",
+  msgs: [],
+  users: [],
+  error: false
 };
 
 let socket;
 
 const reducer = (state, action) => {
-  console.log(state, action);
-  const { type, name, text, room, rooms } = action;
+  console.log(state, action.type);
+  const { type, nickname, text, room, time, nicknames, chats } = action;
   switch (type) {
     case RECIEVE_MSG:
-      const updatedRoom = [...state.rooms[room], { name, room, text }];
       return {
         ...state,
-        rooms: {
-          ...state.rooms,
-          [room]: updatedRoom
-        }
+        msgs: [...state.msgs, { text, nickname, time }]
       };
-    case SET_NICKNAME:
-      console.log(rooms);
-      const newRooms = rooms.reduce((acc,el) => {
-        acc[el] = []
-        return acc
-      },{});
-      console.log(newRooms);
-      return { ...state, name, rooms: { ...newRooms } };
-    case SET_ROOM:
-      if (Object.keys(state.rooms).indexOf(room) === -1) {
-        state.rooms[room] = [];
+    case LOGIN_SUCCESS:
+      return { ...state, nickname, room, users: nicknames, error: false };
+    case LOGIN_FAILURE:
+      return { ...state, error: true };
+    case NEW_USER:
+      if (state.room === action.newUserRoom) {
+        return { ...state, users: nicknames };
       }
-      return {
-        ...state,
-        room
-      };
+      return state;
+    case SET_ROOM:
+      return { ...state, room };
+    case USER_DISCONNECT:
+      return { ...state, users: chats[state.room] };
     default:
       return state;
   }
@@ -61,14 +50,8 @@ const reducer = (state, action) => {
 const sendChatAction = value => {
   socket.emit(CHAT_MESSAGE, value);
 };
-const checkNickname = nickname => {
-  socket.emit(CHECK_NICKNAME, nickname);
-};
-const checkRoom = room => {
-  socket.emit("CHECK_ROOM", room);
-};
-const setRoom = dispatch => room => {
-  dispatch({ type: SET_ROOM, room });
+const login = (nickname, room) => {
+  socket.emit(LOGIN, { nickname, room });
 };
 
 export default function Store(props) {
@@ -79,12 +62,23 @@ export default function Store(props) {
     socket = io("http://localhost:3001");
 
     socket.on(CHAT_MESSAGE, newMsg => {
+      console.log(newMsg);
       dispatch({ type: RECIEVE_MSG, ...newMsg });
     });
-    socket.on("NICKNAME_OK", (name, rooms) => {
-      dispatch({ type: SET_NICKNAME, name, rooms });
+
+    socket.on(LOGIN_SUCCESS, (nickname, room, nicknames) => {
+      console.log(nickname, room, nicknames);
+      dispatch({ type: LOGIN_SUCCESS, nickname, room, nicknames });
     });
-    socket.on("ROOM_OK", room => setRoom(dispatch)(room));
+    socket.on(LOGIN_FAILURE, () => {
+      dispatch({ type: LOGIN_FAILURE });
+    });
+    socket.on(NEW_USER, (nicknames, newUserRoom) => {
+      dispatch({ type: NEW_USER, nicknames, newUserRoom });
+    });
+    socket.on(USER_DISCONNECT, chats => {
+      dispatch({ type: USER_DISCONNECT, chats });
+    });
   }
 
   return (
@@ -92,10 +86,8 @@ export default function Store(props) {
       value={{
         state,
         sendChatAction,
-        dispatch,
-        checkNickname,
-        setRoom: setRoom(dispatch),
-        checkRoom
+        login,
+        dispatch
       }}
     >
       {props.children}

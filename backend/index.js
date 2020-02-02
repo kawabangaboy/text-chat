@@ -1,55 +1,55 @@
 const app = require("express")();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
-
+const TokenGenerator = require("uuid-token-generator");
+const tokgen = new TokenGenerator(); // Default is a 128-bit token encoded in base58
 const CHAT_MESSAGE = "CHAT_MESSAGE";
-const USER_JOIN_ROOM = "USER_JOIN_ROOM";
+const LOGIN = "LOGIN";
+const LOGIN_SUCCESS = "LOGIN_SUCCESS";
+/* chat = [
+  room :[{socket :1, nickname : 2}]
+  ]
+*/
 
-const users = new Set();
-const chatState = {
-  room1: [],
-  room2: []
-};
+chat = {};
 
 io.on("connection", socket => {
   socket.on(CHAT_MESSAGE, msg => {
     console.log("message:" + msg);
     io.emit(CHAT_MESSAGE, msg);
   });
-
-  socket.on(USER_JOIN_ROOM, ({ name, room, prevRoom }) => {
-    if (users.has(name)) {
-      socket.emit(LOGIN_ERROR);
-    } else {
-      users.add(name);
-    }
-    console.log(name, room, prevRoom);
-  });
-
-  socket.on("CHECK_NICKNAME", nickname => {
-    const rooms = Object.keys(chatState);
-    let isOk = true
+  socket.on("disconnect", () => {
+    const rooms = Object.keys(chat);
     for (room of rooms) {
-      if (room.indexOf(nickname) !== -1) {
-        socket.emit("NICKNAME_FAILURE");
-        isOk = false
-        break
+      chat[room] = chat[room].filter(el => el.socket !== socket.id);
+    }
+    socket.broadcast.emit("USER_DISCONNECT", chat);
+  });
+
+  socket.on(LOGIN, ({ nickname, room }) => {
+    if (room) {
+      console.log(
+        chat[room].find(el => {
+          el.nickname === nickname;
+        })
+      );
+      if (
+        !chat[room].find(el => {
+          el.nickname === nickname;
+        })
+      ) {
+        chat[room] = [...chat[room], { nickname, socket: socket.id }];
+        socket.emit(LOGIN_SUCCESS, nickname, room, chat[room]);
+        socket.broadcast.emit("NEW_USER", chat[room], room);
+      } else {
+        socket.emit("LOGIN_FAILURE");
       }
-    }
-    isOk && socket.emit("NICKNAME_OK", nickname, Object.keys(chatState));
-  });
-
-  socket.on("CHECK_ROOM", room => {
-    if (Object.keys(chatState).indexOf(room) === -1) {
-      socket.emit("ROOM_OK",room)
-      chatState[room] = []
-      console.log(room,chatState)
-    }
-    else{
-      socket.emit("ROOM_FAILURE")
+    } else {
+      const newRoom = tokgen.generate();
+      chat[newRoom] = [{ nickname, socket: socket.id }];
+      socket.emit(LOGIN_SUCCESS, nickname, newRoom, chat[newRoom]);
     }
   });
-
   console.log("a user connected");
 });
 
