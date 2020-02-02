@@ -10,10 +10,10 @@ import Chip from "@material-ui/core/Chip";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 
-import { ctx } from "./store";
+import { ctx } from "../store";
 import { useHistory } from "react-router-dom";
 
-import { CHANGE_ROOM } from "./store";
+import { CHANGE_ROOM } from "../store";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -43,22 +43,26 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Chat = () => {
+
   const classes = useStyles();
   let history = useHistory();
 
   const { state, sendChatAction, dispatch } = useContext(ctx);
-  if (state.name === "") {
+  if (!state.name) {
     history.push("/");
   }
-
+  if (!state.room){
+    history.push("/rooms")
+  }
+  console.log(state)
+  const activeRoom = state.room
   const rooms = Object.keys(state.rooms);
+  console.log(rooms)
 
   const [msgText, setMsgText] = useState("");
-  const [activeRoom, setActiveRoom] = useState(rooms[0]);
   const changeRoom = e => {
     const { innerText } = e.target;
     dispatch({ type: CHANGE_ROOM, prevRoom: activeRoom, room: innerText });
-    setActiveRoom(innerText);
   };
   return (
     <Paper elevation={3} className={classes.root}>

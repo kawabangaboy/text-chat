@@ -1,20 +1,11 @@
 import React from "react";
-import "./App.css";
 
-import Board from "./Chat";
 import Store from "./store";
-import { Switch, Route, BrowserRouter as Router } from "react-router-dom";
-import Auth from "./Auth";
-
+import Routes from "./routes";
 function App() {
   return (
     <Store>
-      <Router>
-        <Switch>
-          <Route path="/" exact component={Auth} />
-          <Route path='/chats' component={Board} />
-        </Switch>
-      </Router>
+      <Routes />
     </Store>
   );
 }

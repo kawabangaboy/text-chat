@@ -1,32 +1,22 @@
 const app = require("express")();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
-const cors = require("cors");
-const bodyParser = require("body-parser");
 
 const CHAT_MESSAGE = "CHAT_MESSAGE";
 const USER_JOIN_ROOM = "USER_JOIN_ROOM";
-const LOGIN_ERROR = "LOGIN_ERROR";
 
-app.use(function(request, response, next) {
-  response.header("Access-Control-Allow-Origin", "*");
-  response.header("Access-Control-Allow-Headers", 
-                  "Origin, X-Rquested-With, Content-Type, Accept");
-  next();
-});
 const users = new Set();
-
-app.get("/check_login", function(req, res) {
-  // console.log(req.query);
-  console.log(users.has(req.query.name))
-  res.json({ isLogin: users.has(req.query.name) });
-});
+const chatState = {
+  room1: [],
+  room2: []
+};
 
 io.on("connection", socket => {
   socket.on(CHAT_MESSAGE, msg => {
     console.log("message:" + msg);
     io.emit(CHAT_MESSAGE, msg);
   });
+
   socket.on(USER_JOIN_ROOM, ({ name, room, prevRoom }) => {
     if (users.has(name)) {
       socket.emit(LOGIN_ERROR);
@@ -35,6 +25,31 @@ io.on("connection", socket => {
     }
     console.log(name, room, prevRoom);
   });
+
+  socket.on("CHECK_NICKNAME", nickname => {
+    const rooms = Object.keys(chatState);
+    let isOk = true
+    for (room of rooms) {
+      if (room.indexOf(nickname) !== -1) {
+        socket.emit("NICKNAME_FAILURE");
+        isOk = false
+        break
+      }
+    }
+    isOk && socket.emit("NICKNAME_OK", nickname, Object.keys(chatState));
+  });
+
+  socket.on("CHECK_ROOM", room => {
+    if (Object.keys(chatState).indexOf(room) === -1) {
+      socket.emit("ROOM_OK",room)
+      chatState[room] = []
+      console.log(room,chatState)
+    }
+    else{
+      socket.emit("ROOM_FAILURE")
+    }
+  });
+
   console.log("a user connected");
 });
 
